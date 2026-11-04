@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CloudOff } from "lucide-react";
+import { ReloadWhenOnline } from "./ReloadWhenOnline";
 
 export function OfflinePage() {
   return (
@@ -10,6 +11,7 @@ export function OfflinePage() {
       <Link href="/play" className="rounded-full bg-primary px-8 py-4 text-lg font-bold text-primary-foreground">
         Go to the player
       </Link>
+      <ReloadWhenOnline />
     </main>
   );
 }

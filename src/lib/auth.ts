@@ -1,6 +1,7 @@
 import { ApiClientError, apiClient } from "@/lib/api/apiClient";
 import type { ApiResponse, AuthSession, User } from "@/lib/api/types";
 import { clearOfflineCaches } from "@/lib/offline";
+import { clearPlayQueue } from "@/lib/playQueue";
 
 // Access token + user live in browser memory only — never localStorage, never a cookie we set.
 // On the server this module is shared across requests, so the store is browser-only
@@ -83,7 +84,7 @@ export async function register(token: string, password: string): Promise<User> {
 
 /**
  * POST /api/auth/logout (always 200 per contract), then drop the in-memory session regardless,
- * plus the kid player's offline media, library and sounds caches.
+ * plus the kid player's offline media, library and sounds caches and its queue of unsent plays.
  */
 export async function logout(): Promise<void> {
   try {
@@ -92,6 +93,7 @@ export async function logout(): Promise<void> {
     // The local session is cleared either way; a dead API must not trap the user signed in.
   } finally {
     setSession(null);
+    clearPlayQueue();
     await clearOfflineCaches();
   }
 }

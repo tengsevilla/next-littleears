@@ -40,7 +40,7 @@ test("desktop: the studio nav ends with Play, which opens the kid player", async
   await page.setViewportSize({ width: 1280, height: 800 });
   await openStudio(page, true);
   const links = studioNav(page).getByRole("link").filter({ visible: true });
-  await expect(links).toHaveText(["Songs", "Children", "Catalog", "Invites", "Play"]);
+  await expect(links).toHaveText(["Songs", "Children", "Catalog", "Invites", "Dashboard", "Play"], { useInnerText: true });
   await expect(playLink(page)).toHaveCount(1);
   const play = links.last();
   await expect(play).toHaveAttribute("href", "/play");
@@ -55,7 +55,9 @@ test("375 px admin: Play sits in the top row and every nav link is fully visible
   await openStudio(page, true);
   const nav = studioNav(page);
   const textLinks = nav.getByRole("link").filter({ visible: true });
-  await expect(textLinks).toHaveText(["Songs", "Children", "Catalog", "Invites"]);
+  await expect(textLinks).toHaveText(["Songs", "Children", "Catalog", "Invites", "Stats"], { useInnerText: true });
+  // Below sm the Dashboard link uses its short label so all five fit one row.
+  await expect(textLinks.last()).toHaveAttribute("href", "/studio/dashboard");
   for (const link of await textLinks.all()) await expectUnclipped(link, 375);
 
   const play = playLink(page);

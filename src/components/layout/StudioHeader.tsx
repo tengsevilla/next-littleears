@@ -9,13 +9,18 @@ import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+type NavItem = { href: string; label: string; /** Shown below sm, where five links share a 375 px row. */ short?: string };
+
+const NAV: NavItem[] = [
   { href: "/studio", label: "Songs" },
   { href: "/studio/children", label: "Children" },
   { href: "/studio/catalog", label: "Catalog" },
-] as const;
+];
 // Hidden for parents only as a convenience — the API enforces admin access (403).
-const ADMIN_NAV = [{ href: "/studio/invites", label: "Invites" }] as const;
+const ADMIN_NAV: NavItem[] = [
+  { href: "/studio/invites", label: "Invites" },
+  { href: "/studio/dashboard", label: "Dashboard", short: "Stats" },
+];
 
 /** A song's detail page belongs to "Songs". */
 const isActive = (href: string, pathname: string) =>
@@ -51,7 +56,7 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
 
         {/* Below md the links get their own row; overflow-x-auto is only a fallback for very narrow screens. */}
         <nav aria-label="Studio" className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 md:order-none md:w-auto">
-          {nav.map(({ href, label }) => {
+          {nav.map(({ href, label, short }) => {
             const active = isActive(href, pathname);
             return (
               <Link
@@ -59,11 +64,18 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                  "shrink-0 rounded-full px-2.5 py-1.5 text-sm sm:px-3 font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
                   active && "bg-sky/30 text-foreground hover:bg-sky/40",
                 )}
               >
-                {label}
+                {short ? (
+                  <>
+                    <span className="sm:hidden">{short}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                  </>
+                ) : (
+                  label
+                )}
               </Link>
             );
           })}

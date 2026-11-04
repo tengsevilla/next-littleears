@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMediaObjectUrl } from "@/hooks/api/useMediaObjectUrl";
 import type { LibrarySong } from "@/lib/api/types";
+import type { PlayTracker } from "./usePlayTracker";
 
 /** "Play all" never queues more than this many songs. */
 export const PLAY_ALL_MAX = 5;
@@ -15,8 +16,11 @@ type Queue = { ids: string[]; index: number; all: boolean };
  * One <audio> element for the whole player. By default a song plays once and stops; "play all" walks the
  * first PLAY_ALL_MAX songs, then stops. The current song's audio comes through the authenticated media hook,
  * which revokes the previous object URL whenever the song changes.
+ *
+ * Plays are counted by `tracker` from the element's own events: `playing` counts, `pause`/`waiting` hold the
+ * count, and each new play (a restart, the next song in "play all", a replay after the end) counts on its own.
  */
-export function usePlayer(songs: LibrarySong[]) {
+export function usePlayer(songs: LibrarySong[], tracker: PlayTracker) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const wantPlay = useRef(false);
   const [queue, setQueue] = useState<Queue | null>(null);
@@ -59,13 +63,15 @@ export function usePlayer(songs: LibrarySong[]) {
       // Same song as before: `src` won't change, so restart it here. A different song: silence the old one
       // right away; the [src] effect starts the new one once its audio has loaded.
       if (next.ids[next.index] === currentId && src) {
+        tracker.restart();
         el.currentTime = 0;
         resume();
       } else {
+        tracker.stop();
         el.pause();
       }
     },
-    [currentId, src, resume],
+    [currentId, src, resume, tracker],
   );
 
   const playSong = useCallback(
@@ -94,18 +100,21 @@ export function usePlayer(songs: LibrarySong[]) {
   const next = useCallback(() => {
     if (!queue?.all || queue.index + 1 >= queue.ids.length) return false;
     wantPlay.current = true;
+    tracker.stop();
     // Silence the finished (or skipped) song now; the [src] effect starts the next once its audio loads.
     audioRef.current?.pause();
     setQueue({ ...queue, index: queue.index + 1 });
     return true;
-  }, [queue]);
+  }, [queue, tracker]);
 
   const onEnded = useCallback(() => {
+    // That play is over: replaying the same song (big button) is a new play.
+    tracker.stop();
     if (next()) return;
     pause();
     setQueue((q) => (q ? { ...q, all: false } : q));
     if (current?.mood === "lullaby") setAsleep(true);
-  }, [next, pause, current?.mood]);
+  }, [next, pause, current?.mood, tracker]);
 
   const onTimeUpdate = useCallback(() => {
     const el = audioRef.current;
@@ -126,7 +135,15 @@ export function usePlayer(songs: LibrarySong[]) {
       ref: audioRef,
       src: src ?? undefined,
       onPlay: () => setPlaying(true),
-      onPause: () => setPlaying(false),
+      onPause: () => {
+        setPlaying(false);
+        tracker.pause();
+      },
+      // `playing` (not `play`) fires once audio is actually coming out; `waiting` is a stall mid-song.
+      onPlaying: () => {
+        if (current) tracker.play({ songId: current.id });
+      },
+      onWaiting: () => tracker.pause(),
       onEnded,
       onTimeUpdate,
     },

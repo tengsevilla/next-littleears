@@ -84,3 +84,34 @@ export type CatalogSong = Pick<Song, "id" | "title" | "mood" | "ageBand" | "lyri
   inMyLibrary: boolean;
   mine: boolean;
 };
+
+/** One counted play: exactly one of songId / soundSlug. `playedAt` is only sent for plays queued offline. */
+export type PlayItem = { songId: string } | { soundSlug: string };
+export type PlayInput = PlayItem & { playedAt?: string };
+
+export type StatsRange = "7d" | "30d" | "90d" | "all";
+
+/** GET /api/admin/stats (admin only). */
+export type AdminStats = {
+  totals: {
+    plays: number;
+    songPlays: number;
+    soundPlays: number;
+    activeFamilies: number; // accounts with ≥1 play in range
+    families: number; // all accounts
+    songsCreated: number;
+    sharedSongs: number;
+  };
+  daily: { date: string; songPlays: number; soundPlays: number }[]; // YYYY-MM-DD (UTC), zero-filled
+  topSongs: {
+    id: string;
+    title: string | null;
+    imageUrl: string | null;
+    plays: number;
+    families: number;
+    libraryAdds: number;
+    mine: boolean;
+  }[];
+  personalizedPlays: number; // other accounts' personalized songs, aggregate only
+  topSounds: { slug: string; plays: number; families: number }[];
+};

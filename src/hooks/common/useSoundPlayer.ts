@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SOUND_SAMPLE_RATE, type Sound } from "@/lib/sounds";
+import type { PlayTracker } from "./usePlayTracker";
 
 /** Gain ramp when a sound starts or is stopped by a tap. */
 export const SOUND_FADE_SEC = 1;
@@ -31,8 +32,11 @@ function loopWindow(sound: Sound, buffer: AudioBuffer) {
  * itself the player goes idle. One AudioContext for the player, created/resumed inside the tap that starts
  * a sound (iOS needs the gesture). Decoded buffers are kept per slug for the life of the player. Only one
  * sound plays at a time.
+ *
+ * Plays are counted by `tracker` once per tap: the count starts when the sound becomes audible and ends when it
+ * is stopped, replaced or ends by itself. Its repeats never count again.
  */
-export function useSoundPlayer() {
+export function useSoundPlayer(tracker: PlayTracker) {
   const ctxRef = useRef<AudioContext | null>(null);
   const buffers = useRef(new Map<string, Promise<AudioBuffer>>());
   const active = useRef<Active | null>(null);
@@ -47,6 +51,8 @@ export function useSoundPlayer() {
     const node = active.current;
     const ctx = ctxRef.current;
     active.current = null;
+    // Only a sound that was actually playing owns the count (a song may be counting instead).
+    if (node) tracker.stop();
     if (!node || !ctx) return;
     const now = ctx.currentTime;
     const gain = node.gain.gain;
@@ -56,7 +62,7 @@ export function useSoundPlayer() {
     gain.linearRampToValueAtTime(0, now + fadeSec);
     // Replaces the scheduled end-of-plays stop (the last stop() call wins).
     node.source.stop(now + fadeSec);
-  }, []);
+  }, [tracker]);
 
   const stop = useCallback(() => fadeOut(SOUND_FADE_SEC), [fadeOut]);
 
@@ -114,6 +120,7 @@ export function useSoundPlayer() {
         if (active.current?.source === source) {
           active.current = null;
           generation.current++;
+          tracker.stop();
           setPlaying(false);
         }
       };
@@ -130,8 +137,9 @@ export function useSoundPlayer() {
       source.start(now, window_.start);
       source.stop(end);
       active.current = { slug: sound.slug, source, gain };
+      tracker.play({ soundSlug: sound.slug });
     },
-    [fadeOut, load],
+    [fadeOut, load, tracker],
   );
 
   // Leaving the player (unmount, or hidden by navigation) silences it at once and releases the context.
@@ -140,6 +148,7 @@ export function useSoundPlayer() {
       generation.current++;
       const node = active.current;
       active.current = null;
+      if (node) tracker.stop();
       try {
         node?.source.stop();
       } catch {
@@ -150,7 +159,7 @@ export function useSoundPlayer() {
       // Buffers decoded by the closed context stay valid; keeping them avoids a refetch on return.
       setPlaying(false);
     },
-    [],
+    [tracker],
   );
 
   return { current, playing, playingSlug: playing ? (current?.slug ?? null) : null, start, stop };

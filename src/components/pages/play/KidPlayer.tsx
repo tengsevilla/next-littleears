@@ -6,6 +6,7 @@ import { useLibrary } from "@/hooks/api/useLibrary";
 import { useSoundPlayer } from "@/hooks/common/useSoundPlayer";
 import { useMediaSession } from "@/hooks/common/useMediaSession";
 import { usePlayer } from "@/hooks/common/usePlayer";
+import { usePlayTracker } from "@/hooks/common/usePlayTracker";
 import { readPlayerView, savePlayerView, type PlayerView } from "@/lib/playerChoice";
 import { SOUNDS, type Sound } from "@/lib/sounds";
 import { cn } from "@/lib/utils";
@@ -33,8 +34,10 @@ export function KidPlayer({
   const { songs: library, error, isLoading } = useLibrary(childId);
   // The backend only returns `ready` songs; one without audio can't be played, so it isn't shown.
   const songs = useMemo(() => library?.filter((s) => s.audioUrl) ?? [], [library]);
-  const player = usePlayer(songs);
-  const sounds = useSoundPlayer();
+  // One play counter for both players (only one thing plays at a time); it never touches playback.
+  const tracker = usePlayTracker();
+  const player = usePlayer(songs, tracker);
+  const sounds = useSoundPlayer(tracker);
   const [menuOpen, setMenuOpen] = useState(false);
   // Read once on mount: the player is client-only (see PlayerApp), so storage is hydration-safe here.
   const [view, setView] = useState<PlayerView>(readPlayerView);
