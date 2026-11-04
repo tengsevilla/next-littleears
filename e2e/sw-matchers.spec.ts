@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { isLibraryUrl, isMediaUrl } from "../src/lib/offline";
+import { isLibraryUrl, isMediaUrl, isSoundUrl } from "../src/lib/offline";
 
 // Unit check of the service worker's route matchers (no browser needed): the API is cross-origin,
 // so only the API origin's /api/media/* and /api/library may ever hit the runtime caches.
@@ -20,4 +20,13 @@ test("library matcher: exact /api/library path on the API origin, any childId", 
   expect(isLibraryUrl(url(`${API}/api/library/extra`), API)).toBe(false);
   expect(isLibraryUrl(url("http://localhost:3000/api/library"), API)).toBe(false);
   expect(isLibraryUrl(url(`${API}/api/children`), API)).toBe(false);
+});
+
+test("sounds matcher: the app's own /sounds/* only", () => {
+  const APP = "http://localhost:3000";
+  expect(isSoundUrl(url(`${APP}/sounds/rocket.mp3`), APP)).toBe(true);
+  expect(isSoundUrl(url(`${APP}/sounds/rocket.webp`), APP)).toBe(true);
+  expect(isSoundUrl(url(`${APP}/sounds/rocket.mp3?v=b19126eb`), APP)).toBe(true);
+  expect(isSoundUrl(url(`${API}/sounds/rocket.mp3`), APP)).toBe(false);
+  expect(isSoundUrl(url(`${APP}/play`), APP)).toBe(false);
 });

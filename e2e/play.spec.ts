@@ -230,12 +230,13 @@ test("no network at startup keeps the player on /play, running without a token",
   expect(api.calls.find((c) => c.path === "/api/library")?.authorization).toBeUndefined();
 });
 
-test("signing out of the studio deletes the offline media + library caches", async ({ page }) => {
+test("signing out of the studio deletes the offline media, library and sounds caches", async ({ page }) => {
   await mockBackend(page, { "GET /api/songs": ok([]), "POST /api/auth/logout": ok(null) });
   await page.goto("/studio");
   await page.evaluate(async () => {
     await (await caches.open("littleears-media")).put("/x", new Response("m"));
     await (await caches.open("littleears-library")).put("/y", new Response("l"));
+    await (await caches.open("littleears-sounds")).put("/sounds/rain.mp3", new Response("s"));
     await (await caches.open("unrelated")).put("/z", new Response("z"));
   });
   await page.getByRole("button", { name: "Sign out" }).click();

@@ -5,10 +5,12 @@ import { CacheFirst, CacheableResponsePlugin, ExpirationPlugin, NetworkFirst, Ne
 import {
   isLibraryUrl,
   isMediaUrl,
+  isSoundUrl,
   LIBRARY_CACHE,
   LIBRARY_TIMEOUT_SECONDS,
   MEDIA_CACHE,
   MEDIA_MAX_ENTRIES,
+  SOUNDS_CACHE,
 } from "../lib/offline";
 
 declare global {
@@ -53,6 +55,16 @@ const serwist = new Serwist({
       handler: new NetworkFirst({
         cacheName: LIBRARY_CACHE,
         networkTimeoutSeconds: LIBRARY_TIMEOUT_SECONDS,
+        matchOptions,
+        plugins: [new CacheableResponsePlugin({ statuses: [200] })],
+      }),
+    },
+    {
+      // Looping soundscapes + covers: static, team-made files that only change with a deploy. Not precached
+      // (a missing file would fail the whole install); each is stored the first time it is played or shown.
+      matcher: ({ url }) => isSoundUrl(url, self.location.origin),
+      handler: new CacheFirst({
+        cacheName: SOUNDS_CACHE,
         matchOptions,
         plugins: [new CacheableResponsePlugin({ statuses: [200] })],
       }),

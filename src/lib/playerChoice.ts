@@ -34,3 +34,23 @@ export function clearPlayerChoice(): void {
     // Nothing stored to clear.
   }
 }
+
+// Songs or Sounds: the last view the player showed on this device. Same storage rules as above.
+const VIEW_KEY = "littleears.player.view";
+export type PlayerView = "songs" | "sounds";
+
+export function readPlayerView(): PlayerView {
+  try {
+    return window.localStorage.getItem(VIEW_KEY) === "sounds" ? "sounds" : "songs";
+  } catch {
+    return "songs";
+  }
+}
+
+export function savePlayerView(view: PlayerView): void {
+  try {
+    window.localStorage.setItem(VIEW_KEY, view);
+  } catch {
+    // Not persisted; the in-memory view still drives this visit.
+  }
+}

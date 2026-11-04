@@ -5,6 +5,8 @@
 export const MEDIA_CACHE = "littleears-media";
 /** /api/library responses, network-first; the cached copy is the offline fallback per childId. */
 export const LIBRARY_CACHE = "littleears-library";
+/** /sounds/* static soundscapes + covers (same origin as the app), cache-first. */
+export const SOUNDS_CACHE = "littleears-sounds";
 export const MEDIA_MAX_ENTRIES = 200;
 export const LIBRARY_TIMEOUT_SECONDS = 3;
 
@@ -17,11 +19,16 @@ export function isLibraryUrl(url: URL, apiOrigin: string): boolean {
   return url.origin === apiOrigin && url.pathname === "/api/library";
 }
 
+/** The looping soundscapes are static files on the app's own origin. */
+export function isSoundUrl(url: URL, appOrigin: string): boolean {
+  return url.origin === appOrigin && url.pathname.startsWith("/sounds/");
+}
+
 /** Called on logout: the next account on this device must never see this one's songs. */
 export async function clearOfflineCaches(): Promise<void> {
   if (typeof caches === "undefined") return;
   try {
-    await Promise.all([caches.delete(MEDIA_CACHE), caches.delete(LIBRARY_CACHE)]);
+    await Promise.all([caches.delete(MEDIA_CACHE), caches.delete(LIBRARY_CACHE), caches.delete(SOUNDS_CACHE)]);
   } catch {
     // Cache Storage can be unavailable (private mode, blocked site data); nothing to clear then.
   }

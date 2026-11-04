@@ -83,7 +83,7 @@ export async function register(token: string, password: string): Promise<User> {
 
 /**
  * POST /api/auth/logout (always 200 per contract), then drop the in-memory session regardless,
- * plus the kid player's offline media + library caches.
+ * plus the kid player's offline media, library and sounds caches.
  */
 export async function logout(): Promise<void> {
   try {
