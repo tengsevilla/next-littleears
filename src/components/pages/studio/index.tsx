@@ -48,10 +48,12 @@ export function StudioPage() {
       </header>
 
       <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        {/* Scrolls sideways on narrow screens with the scrollbar hidden. The trigger's ::after underline (line variant
+            only, invisible here) hangs 1 px below the list, which made the box scroll vertically too — so drop it. */}
+        <div className="scrollbar-none -mx-4 flex overflow-x-auto overflow-y-hidden px-4 sm:mx-0 sm:px-0">
           <TabsList aria-label="Filter songs by status">
             {FILTERS.map((f) => (
-              <TabsTrigger key={f.value} value={f.value} className="px-3">
+              <TabsTrigger key={f.value} value={f.value} className="px-3 after:hidden">
                 {f.label}
               </TabsTrigger>
             ))}

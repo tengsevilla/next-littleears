@@ -73,3 +73,60 @@ test("375 px admin: Play sits in the top row and every nav link is fully visible
   await play.click();
   await expect(page).toHaveURL(/\/play$/);
 });
+
+for (const width of [768, 1024, 1280]) {
+  for (const admin of [true, false]) {
+    test(`${width} px ${admin ? "admin" : "parent"}: logo, nav, Play and Sign out share one row`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await openStudio(page, admin);
+      const centerY = async (l: Locator) => {
+        const b = (await l.boundingBox())!;
+        return b.y + b.height / 2;
+      };
+      const banner = page.getByRole("banner");
+      const navY = await centerY(studioNav(page));
+      const signOut = banner.getByRole("button", { name: "Sign out" });
+      const logo = banner.getByRole("link", { name: /LittleEars/ });
+      for (const l of [signOut, logo, playLink(page)]) {
+        expect(Math.abs((await centerY(l)) - navY)).toBeLessThanOrEqual(2);
+      }
+      // Play is the last nav item, and Sign out is to its right.
+      const play = (await playLink(page).boundingBox())!;
+      expect(play.x + play.width).toBeLessThanOrEqual((await signOut.boundingBox())!.x);
+      // Nothing in the header is cut off.
+      for (const link of await studioNav(page).getByRole("link").filter({ visible: true }).all()) await expectUnclipped(link, width);
+      await expectUnclipped(signOut, width);
+    });
+  }
+}
+
+test("375 px: nothing overflows the page horizontally", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openStudio(page, true);
+  await expect(studioNav(page)).toBeVisible();
+  await expect(page.getByRole("tablist", { name: "Filter songs by status" })).toBeVisible();
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(375);
+});
+
+for (const width of [375, 1280]) {
+  test(`${width} px: the song filter tabs scroll sideways without a visible scrollbar or vertical overflow`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await openStudio(page);
+    const scroller = page.getByRole("tablist", { name: "Filter songs by status" }).locator("xpath=..");
+    const m = await scroller.evaluate((el: HTMLElement) => {
+      const cs = getComputedStyle(el);
+      return {
+        overflowY: cs.overflowY,
+        scrollbarWidth: cs.scrollbarWidth,
+        vertical: el.scrollHeight - el.clientHeight,
+        // A visible horizontal scrollbar takes layout height: offsetHeight − clientHeight (minus borders).
+        scrollbarHeight: el.offsetHeight - el.clientHeight - (parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth)),
+      };
+    });
+    expect(m.overflowY).toBe("hidden");
+    expect(m.scrollbarWidth).toBe("none");
+    expect(m.scrollbarHeight).toBe(0);
+    expect(m.vertical).toBeLessThanOrEqual(0);
+  });
+}

@@ -9,7 +9,12 @@ import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-type NavItem = { href: string; label: string; /** Shown below sm, where five links share a 375 px row. */ short?: string };
+type NavItem = {
+  href: string;
+  label: string;
+  /** Shown below sm (five links share a 375 px row) and at md–lg (the links share the top row with logo and Sign out). */
+  short?: string;
+};
 
 const NAV: NavItem[] = [
   { href: "/studio", label: "Songs" },
@@ -43,7 +48,7 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
 
   return (
     <header className="border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 md:gap-x-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 md:flex-nowrap lg:gap-x-6">
         <Link href="/studio" className="flex items-center gap-2 font-extrabold tracking-tight">
           <span aria-hidden className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <Music className="size-4" />
@@ -54,8 +59,9 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
           </span>
         </Link>
 
-        {/* Below md the links get their own row; overflow-x-auto is only a fallback for very narrow screens. */}
-        <nav aria-label="Studio" className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 md:order-none md:w-auto">
+        {/* Below md the links get their own row; overflow-x-auto is only a fallback for very narrow screens.
+            From md up everything shares one row, so the nav never shrinks — the email gives way instead. */}
+        <nav aria-label="Studio" className="scrollbar-none order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 md:order-none md:w-auto md:shrink-0">
           {nav.map(({ href, label, short }) => {
             const active = isActive(href, pathname);
             return (
@@ -64,14 +70,14 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "shrink-0 rounded-full px-2.5 py-1.5 text-sm sm:px-3 font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                  "shrink-0 rounded-full px-2.5 py-1.5 text-sm sm:px-3 md:px-2.5 lg:px-3 font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
                   active && "bg-sky/30 text-foreground hover:bg-sky/40",
                 )}
               >
                 {short ? (
                   <>
-                    <span className="sm:hidden">{short}</span>
-                    <span className="hidden sm:inline">{label}</span>
+                    <span className="sm:hidden md:inline lg:hidden">{short}</span>
+                    <span className="hidden sm:inline md:hidden lg:inline">{label}</span>
                   </>
                 ) : (
                   label
@@ -82,11 +88,19 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
           <PlayLink className="ml-1 hidden md:inline-flex" />
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 md:gap-3">
-          <span className="hidden max-w-40 truncate text-sm text-muted-foreground lg:inline">{email}</span>
+        <div className="ml-auto flex min-w-0 items-center gap-2 md:gap-3">
+          {/* Only from xl, and it truncates first; below that the email is the Sign out button's tooltip. */}
+          <span className="hidden min-w-0 max-w-48 truncate text-sm text-muted-foreground xl:inline">{email}</span>
           {/* Below md, Play sits in the top row so the links row never has to scroll. */}
           <PlayLink className="inline-flex md:hidden" />
-          <Button variant="outline" size="sm" onClick={handleLogout} disabled={signingOut}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            title={`Signed in as ${email}`}
+            onClick={handleLogout}
+            disabled={signingOut}
+          >
             <LogOut data-icon="inline-start" />
             {signingOut ? "Signing out…" : "Sign out"}
           </Button>
