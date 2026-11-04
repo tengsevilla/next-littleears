@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSWRConfig } from "swr";
-import { LogOut, Music } from "lucide-react";
+import { LogOut, Music, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -50,23 +50,34 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
           </span>
         </Link>
 
-        <nav aria-label="Studio" className="order-last -mx-1 flex w-full gap-1 overflow-x-auto px-1 sm:order-none sm:w-auto">
-          {nav.map(({ href, label }) => {
-            const active = isActive(href, pathname);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                  active && "bg-sky/30 text-foreground hover:bg-sky/40",
-                )}
-              >
-                {label}
-              </Link>
-            );
-          })}
+        <nav aria-label="Studio" className="order-last -mx-1 flex w-full items-center gap-2 px-1 sm:order-none sm:w-auto">
+          {/* Only the text links scroll on narrow screens; Play sits outside the scroller so it stays visible. */}
+          <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
+            {nav.map(({ href, label }) => {
+              const active = isActive(href, pathname);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                    active && "bg-sky/30 text-foreground hover:bg-sky/40",
+                  )}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+          {/* Hand the device to the kid: leaves the studio, so it is never the current page. */}
+          <Link
+            href="/play"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sunshine px-3.5 py-1.5 text-sm font-bold text-stone-900 shadow-sm transition-colors outline-none hover:bg-sunshine/85 focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <Play aria-hidden className="size-4 fill-current" />
+            Play
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
