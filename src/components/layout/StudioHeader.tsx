@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/studio", label: "Songs" },
-  { href: "/studio/new", label: "New song" },
   { href: "/studio/children", label: "Children" },
   { href: "/studio/catalog", label: "Catalog" },
 ] as const;
@@ -39,7 +38,7 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
 
   return (
     <header className="border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 md:gap-x-6">
         <Link href="/studio" className="flex items-center gap-2 font-extrabold tracking-tight">
           <span aria-hidden className="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <Music className="size-4" />
@@ -50,38 +49,31 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
           </span>
         </Link>
 
-        <nav aria-label="Studio" className="order-last -mx-1 flex w-full items-center gap-2 px-1 sm:order-none sm:w-auto">
-          {/* Only the text links scroll on narrow screens; Play sits outside the scroller so it stays visible. */}
-          <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
-            {nav.map(({ href, label }) => {
-              const active = isActive(href, pathname);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                    active && "bg-sky/30 text-foreground hover:bg-sky/40",
-                  )}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
-          {/* Hand the device to the kid: leaves the studio, so it is never the current page. */}
-          <Link
-            href="/play"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sunshine px-3.5 py-1.5 text-sm font-bold text-stone-900 shadow-sm transition-colors outline-none hover:bg-sunshine/85 focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <Play aria-hidden className="size-4 fill-current" />
-            Play
-          </Link>
+        {/* Below md the links get their own row; overflow-x-auto is only a fallback for very narrow screens. */}
+        <nav aria-label="Studio" className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 md:order-none md:w-auto">
+          {nav.map(({ href, label }) => {
+            const active = isActive(href, pathname);
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                  active && "bg-sky/30 text-foreground hover:bg-sky/40",
+                )}
+              >
+                {label}
+              </Link>
+            );
+          })}
+          <PlayLink className="ml-1 hidden md:inline-flex" />
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
-          <span className="hidden max-w-48 truncate text-sm text-muted-foreground md:inline">{email}</span>
+        <div className="ml-auto flex items-center gap-2 md:gap-3">
+          <span className="hidden max-w-40 truncate text-sm text-muted-foreground lg:inline">{email}</span>
+          {/* Below md, Play sits in the top row so the links row never has to scroll. */}
+          <PlayLink className="inline-flex md:hidden" />
           <Button variant="outline" size="sm" onClick={handleLogout} disabled={signingOut}>
             <LogOut data-icon="inline-start" />
             {signingOut ? "Signing out…" : "Sign out"}
@@ -89,5 +81,24 @@ export function StudioHeader({ email, isAdmin }: { email: string; isAdmin: boole
         </div>
       </div>
     </header>
+  );
+}
+
+/**
+ * Hand the device to the kid. Rendered twice (top row on phones, end of the nav on desktop) with responsive
+ * classes, so exactly one is visible. It leaves the studio, so it is never the current page.
+ */
+function PlayLink({ className }: { className: string }) {
+  return (
+    <Link
+      href="/play"
+      className={cn(
+        "shrink-0 items-center gap-1.5 rounded-full bg-sunshine px-3.5 py-1.5 text-sm font-bold text-stone-900 shadow-sm transition-colors outline-none hover:bg-sunshine/85 focus-visible:ring-3 focus-visible:ring-ring/50",
+        className,
+      )}
+    >
+      <Play aria-hidden className="size-4 fill-current" />
+      Play
+    </Link>
   );
 }

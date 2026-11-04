@@ -123,10 +123,11 @@ test("mood and length radios have names and labelled groups", async ({ page }) =
   await expect(mood.getByRole("radio", { name: "Playful", exact: true })).toBeChecked();
 });
 
-test("after a submit, New song in the nav (and Back) shows a fresh, enabled form", async ({ page }) => {
+test("after a submit, the Songs page's New song button (and Back) shows a fresh, enabled form", async ({ page }) => {
   await mockBackend(page, {
     "POST /api/songs": { status: 201, data: { id: "s9", status: "queued" } },
     "GET /api/songs/s9": ok(song({ id: "s9", status: "queued" })),
+    "GET /api/songs": ok([]),
   });
   await page.goto("/studio/new");
   await page.getByLabel("What should it be about?").fill("the moon");
@@ -134,7 +135,9 @@ test("after a submit, New song in the nav (and Back) shows a fresh, enabled form
   await page.getByRole("button", { name: "Make the song" }).click();
   await expect(page).toHaveURL("/studio/songs/s9", { timeout: 15_000 });
 
-  await page.getByRole("navigation", { name: "Studio" }).getByRole("link", { name: "New song" }).click();
+  await page.getByRole("navigation", { name: "Studio" }).getByRole("link", { name: "Songs" }).click();
+  await expect(page).toHaveURL("/studio");
+  await page.getByRole("main").getByRole("link", { name: "New song" }).click();
   await expect(page).toHaveURL("/studio/new");
   await expect(page.getByLabel("What should it be about?")).toHaveValue("");
   await expect(page.getByRole("radio", { name: "Playful", exact: true })).toBeChecked();
